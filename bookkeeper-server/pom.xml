@@ -376,5 +376,38 @@
         </plugins>
       </build>
     </profile>
+
+    <profile>
+      <id>jacoco</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>0.8.11</version> <!-- Usiamo una versione più recente -->
+            <executions>
+              <execution>
+                <id>prepare-agent</id>
+                <goals>
+                  <goal>prepare-agent</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>report</id>
+                <phase>verify</phase> <!-- Esegui il report alla fine, dopo i test -->
+                <goals>
+                  <goal>report</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- Aggiungerai qui il profilo per PIT in futuro -->
+
+
   </profiles>
+
 </project>
