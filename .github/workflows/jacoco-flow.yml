@@ -36,7 +36,7 @@ jobs:
       - name: Build with JaCoCo and Generate Report
         # CORREZIONE 3: Questo è il comando completo che abbiamo scoperto essere necessario.
         # Esegue il build, esclude i moduli problematici, e attiva il profilo JaCoCo.
-        run: mvn clean verify -P jacoco -pl '!cpu-affinity,!native-io,!bookkeeper-dist-all,!tests' -am
+        run: mvn clean verify -P jacoco
 
       - name: Upload JaCoCo Code Coverage Report
         uses: actions/upload-artifact@v4
