@@ -1,0 +1,40 @@
+# GitHub Actions workflow for Mutation Testing Analysis.
+#
+# This workflow triggers on push/pull_request and can also be run manually.
+# It activates the 'pitest' Maven profile to generate a mutation testing report,
+# and uploads the resulting HTML report as a build artifact.
+
+name: PIT Mutation Testing Report
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-mutation-test:
+    name: Build with PIT Mutation Testing
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Generate PIT Mutation Testing Report
+        run: mvn clean verify -P pitest
+
+      - name: Upload PIT Mutation Testing Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pit-report
+          path: bookkeeper-server/target/pit-reports/
+          if-no-files-found: error

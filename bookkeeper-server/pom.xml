@@ -415,9 +415,52 @@
       </build>
     </profile>
 
-    <!-- Aggiungerai qui il profilo per PIT in futuro -->
-
-
+    <!-- PIT Profile -->
+    <profile>
+      <id>pitest</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.pitest</groupId>
+            <artifactId>pitest-maven</artifactId>
+            <dependencies>
+              <dependency>
+                <groupId>org.pitest</groupId>
+                <artifactId>pitest-junit5-plugin</artifactId>
+                <version>1.2.0</version>
+              </dependency>
+            </dependencies>
+            <executions>
+              <execution>
+                <id>pit-execution</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>mutationCoverage</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <jvmArgs>
+                <jvmArg>--add-opens</jvmArg>
+                <jvmArg>java.base/java.lang=ALL-UNNAMED</jvmArg>
+                <jvmArg>--add-opens</jvmArg>
+                <jvmArg>java.base/java.util=ALL-UNNAMED</jvmArg>
+              </jvmArgs>
+              <targetClasses>
+                <param>org.apache.bookkeeper.bookie.FileInfo</param>
+              </targetClasses>
+              <targetTests>
+                <param>org.apache.bookkeeper.bookie.FileInfoTest</param>
+              </targetTests>
+              <outputFormats>
+                <outputFormat>XML</outputFormat>
+                <outputFormat>HTML</outputFormat>
+              </outputFormats>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 
 </project>
