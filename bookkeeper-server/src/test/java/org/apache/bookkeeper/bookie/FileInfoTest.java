@@ -10,11 +10,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
+
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -188,15 +191,6 @@ public class FileInfoTest {
     }
 
     @Test
-    public void testRlocFileDoesNotExist() throws IOException {
-        if (newLocationFile.exists())
-            newLocationFile.delete();
-
-        fileInfo.moveToNewLocation(newLocationFile, 0);
-        assertTrue(newLocationFile.exists());
-    }
-
-    @Test
     public void testTransferToFailure() throws Exception{
         // Crea un mock di FileChannel e simula un errore di copia dei dati
         FileChannel mockFc = Mockito.mock(FileChannel.class);
@@ -219,6 +213,61 @@ public class FileInfoTest {
         Mockito.doReturn(false).when(spyFileInfo).delete();
 
         assertThrows(IOException.class, () -> spyFileInfo.moveToNewLocation(newLocationFile, 0));
+    }
+
+    // Test aggiuntivi dopo PIT
+    @Test
+    public void testRlocFileAlreadyExists() throws IOException {
+        // Uccide la mutazione che nega la condizione `if (!rlocFile.exists())`
+        // Crea manualmente il file .rloc per simulare uno stato pre-esistente
+        File rlocFile = new File(newLocationFile.getParentFile(), newLocationFile.getName() + IndexPersistenceMgr.RLOC);
+        assertTrue(rlocFile.createNewFile());
+        assertDoesNotThrow(() -> fileInfo.moveToNewLocation(newLocationFile, 10));
+        assertTrue(newLocationFile.exists());
+    }
+
+    @Test
+    public void testMoveToNonExistentDirectory() throws IOException {
+        // Uccide la mutazione che rimuove la chiamata a `checkParents`
+        // Tenta di spostare il file in una sottodirectory che non esiste
+        File nonExistentDir = new File(USER_DIR, TEST_RESOURCES_DIR + "subdir/");
+        File targetFile = new File(nonExistentDir, "target.txt");
+        if (nonExistentDir.exists()) {
+            for (File f : nonExistentDir.listFiles()) f.delete();
+            nonExistentDir.delete();
+        }
+        assertDoesNotThrow(() -> fileInfo.moveToNewLocation(targetFile, 10));
+        assertTrue(targetFile.exists());
+        targetFile.delete();
+        nonExistentDir.delete();
+    }
+
+    @Test
+    public void testForceAndCloseAreCalled() throws Exception {
+        // Uccide le mutazioni che rimuovono le chiamate a `.force()` e `.close()`
+        // Prepara un mock per il canale originale per simulare una copia riuscita
+        FileChannel mockOriginalFc = Mockito.mock(FileChannel.class);
+        when(mockOriginalFc.size()).thenReturn(1024L);
+        when(mockOriginalFc.transferTo(anyLong(), anyLong(), any(FileChannel.class))).thenReturn(1024L);
+        Field fcField = FileInfo.class.getDeclaredField("fc");
+        fcField.setAccessible(true);
+        fcField.set(fileInfo, mockOriginalFc);
+
+        // Intercetta la creazione del nuovo file channel ed esegue il metodo
+        try (MockedConstruction<RandomAccessFile> mockedRaf = Mockito.mockConstruction(RandomAccessFile.class,
+                (mock, context) -> {
+                    // Crea un secondo mock per il canale del file di destinazione
+                    FileChannel mockNewFc = Mockito.mock(FileChannel.class);
+                    when(mock.getChannel()).thenReturn(mockNewFc);
+                })) {
+            fileInfo.moveToNewLocation(newLocationFile, 1024L);
+            // Verifica la chiamata dei metodi sul nuovo canale
+            RandomAccessFile mockedFile = mockedRaf.constructed().get(0);
+            FileChannel mockedChannel = mockedFile.getChannel();
+            Mockito.verify(mockedChannel).force(true);
+            Mockito.verify(mockedChannel).close();
+        }
+        Mockito.verify(mockOriginalFc).close();
     }
 
 }
