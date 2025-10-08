@@ -448,10 +448,12 @@
               </jvmArgs>
               <targetClasses>
                 <param>org.apache.bookkeeper.bookie.FileInfo</param>
+                <param>org.apache.bookkeeper.bookie.storage.ldb.WriteCache</param>
               </targetClasses>
               <targetTests>
                 <param>org.apache.bookkeeper.bookie.FileInfoTest</param>
                 <param>org.apache.bookkeeper.bookie.LLMFileInfoTest</param>
+                <param>org.apache.bookkeeper.bookie.WriteCacheTest</param>
               </targetTests>
               <outputFormats>
                 <outputFormat>XML</outputFormat>
