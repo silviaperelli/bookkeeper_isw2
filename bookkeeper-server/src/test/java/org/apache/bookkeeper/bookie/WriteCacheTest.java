@@ -1,18 +1,22 @@
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import org.apache.bookkeeper.bookie.storage.ldb.WriteCache;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.MockedStatic;
 
+import java.lang.reflect.Field;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class WriteCacheTest {
 
@@ -91,17 +95,50 @@ public class WriteCacheTest {
     @ParameterizedTest
     @MethodSource("data")
     void testWriteCacheCreation(ByteBufAllocator allocator, long maxCacheSize, int maxSegmentSize, Class<? extends Throwable> expectedException) {
+        // Gestione dei casi di fallimento
         if (expectedException != null) {
             assertThrows(expectedException, () -> new WriteCache(allocator, maxCacheSize, maxSegmentSize));
         } else {
-            // Se non ci aspettiamo eccezioni, verifica che la costruzione abbia successo
-            // e che lo stato iniziale sia corretto
-            WriteCache writeCache = assertDoesNotThrow(() -> new WriteCache(allocator, maxCacheSize, maxSegmentSize));
+            // Gestione dei casi di successo
+            WriteCache writeCache = null;
+            try {
+                writeCache = new WriteCache(allocator, maxCacheSize, maxSegmentSize);
 
-            assertNotNull(writeCache);
-            assertEquals(0, writeCache.size(), "La dimensione iniziale dovrebbe essere 0");
-            assertEquals(0, writeCache.count(), "Il conteggio iniziale dovrebbe essere 0");
-            assertTrue(writeCache.isEmpty(), "La cache dovrebbe essere vuota all'inizio");
+                // Se non ci aspettiamo eccezioni, verifica che la costruzione abbia successo e che lo stato iniziale sia corretto
+                assertEquals(0, writeCache.size(), "La dimensione iniziale dovrebbe essere 0");
+                assertEquals(0, writeCache.count(), "Il conteggio iniziale dovrebbe essere 0");
+                assertTrue(writeCache.isEmpty(), "La cache dovrebbe essere vuota all'inizio");
+
+                // Test aggiuntivi dopo PIT
+                // Controlla che i calcoli per maschera, bit e dimensione dell'ultimo segmento siano corretti
+                long expectedMask = maxSegmentSize - 1;
+                assertEquals(expectedMask, getPrivateField(writeCache, "segmentOffsetMask"), "Fallita la verifica di segmentOffsetMask");
+
+                long expectedBits = 63 - Long.numberOfLeadingZeros(maxSegmentSize);
+                assertEquals(expectedBits, getPrivateField(writeCache, "segmentOffsetBits"), "Fallita la verifica di segmentOffsetBits");
+
+                ByteBuf[] segments = (ByteBuf[]) getPrivateField(writeCache, "cacheSegments");
+                int segmentsCount = segments.length;
+                int expectedLastSegmentSize = (int) (maxCacheSize % maxSegmentSize);
+                int actualLastSegmentCapacity = segments[segmentsCount - 1].capacity();
+                assertEquals(expectedLastSegmentSize, actualLastSegmentCapacity, "La capacità dell'ultimo segmento non è corretta");
+
+            } finally {
+                if (writeCache != null) {
+                    writeCache.close();
+                }
+            }
+        }
+    }
+
+    // Metodo helper per accedere a un campo privato utilizzando la Reflection di Java
+    private static Object getPrivateField(Object object, String fieldName) {
+        try {
+            Field field = object.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(object);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException("Impossibile accedere al campo privato: " + fieldName, e);
         }
     }
 
