@@ -6,6 +6,7 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import org.apache.bookkeeper.bookie.storage.ldb.WriteCache;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -23,7 +24,7 @@ public class WriteCachePutTest {
 
     // Costanti per definire un ambiente di test consistente
     private static final long CACHE_CAPACITY = 1024;
-    private static final int SEGMENT_SIZE = 1024;
+    private static final int SEGMENT_SIZE = 512; // Segmenti più piccoli per testare il salto
 
     // Variabili per tracciare lo stato della cache prima dell'esecuzione del metodo
     private long sizeBefore;
@@ -129,6 +130,61 @@ public class WriteCachePutTest {
                 assertEquals(sizeBefore, writeCache.size(), "La dimensione della cache non doveva cambiare.");
                 assertEquals(countBefore, writeCache.count(), "Il contatore delle entry non doveva cambiare.");
             }
+        }
+    }
+
+
+    // Test aggiuntivi dopo Jacoco
+    @Test
+    void testPutTriggersContinueAcrossSegmentBoundary() {
+        // La dimensione della prima entry, allineata a 64 byte, non rimepie completamente il primo segmento
+        int firstEntrySize = 400;
+        ByteBuf firstEntry = Unpooled.buffer(firstEntrySize).writerIndex(firstEntrySize);
+        assertTrue(writeCache.put(1L, 1L, firstEntry), "Il primo inserimento doveva avere successo.");
+
+        // La seconda entry ha una dimensione maggiore dello spazio rimanente
+        int secondEntrySize = 100;
+        ByteBuf secondEntry = Unpooled.buffer(secondEntrySize).writerIndex(secondEntrySize);
+
+        // Eseguendo la put del secondo segmento, si salterà al segmento successivo
+        boolean result = writeCache.put(2L, 1L, secondEntry);
+
+        // Verifica che il secondo inserimento sia riuscito e che entrambe le query siano presenti
+        assertTrue(result, "Il secondo inserimento (che attiva il continue) doveva avere successo.");
+        assertNotNull(writeCache.get(1L, 1L), "La prima entry dovrebbe essere recuperabile.");
+        assertNotNull(writeCache.get(2L, 1L), "La seconda entry dovrebbe essere recuperabile.");
+        assertEquals(2, writeCache.count(), "Dovrebbero esserci due entry nella cache.");
+        assertEquals(firstEntrySize + secondEntrySize, writeCache.size(), "La dimensione totale della cache deve corrispondere alla somma delle entry.");
+    }
+
+    @Test
+    void testPutWithOutOfOrderEntries() {
+        ByteBuf lastEntry = null;
+        ByteBuf entry5Retrieved = null;
+        ByteBuf entry3Retrieved = null;
+        try {
+            // Crea due entry distinte
+            ByteBuf entry5 = Unpooled.buffer(10).writerIndex(10);
+            ByteBuf entry3 = Unpooled.buffer(10).writerIndex(10);
+
+            // Inserimento prima dell'entry con un ID più alto
+            assertTrue(writeCache.put(1L, 5L, entry5));
+            assertTrue(writeCache.put(1L, 3L, entry3));
+
+            // Verifica che "getLastEntry" restituisce l'entry con ID più alto
+            lastEntry = writeCache.getLastEntry(1L);
+            entry5Retrieved = writeCache.get(1L, 5L);
+            entry3Retrieved = writeCache.get(1L, 3L);
+
+            // Verifica che entrambe le entry siano inserite e recuperabili
+            assertEquals(entry5, lastEntry);
+            assertEquals(entry5, entry5Retrieved);
+            assertEquals(entry3, entry3Retrieved);
+        } finally {
+            // Rilascia tutti i buffer che hai recuperato
+            if (lastEntry != null) lastEntry.release();
+            if (entry5Retrieved != null) entry5Retrieved.release();
+            if (entry3Retrieved != null) entry3Retrieved.release();
         }
     }
 }
