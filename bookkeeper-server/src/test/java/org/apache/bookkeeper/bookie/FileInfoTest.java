@@ -151,9 +151,11 @@ public class FileInfoTest {
     @ParameterizedTest
     @MethodSource("data")
     public void moveToNewLocationBoundaryTest(File newFile, long size, expectedOutputType expectedOutput, Class<? extends Throwable> expectedException) throws IOException {
+        // Gestione dei casi di fallimento
         if (expectedException != null) {
             assertThrows(expectedException, () -> fileInfo.moveToNewLocation(newFile, size));
         } else {
+            // Gestione dei casi di successo
             fileInfo.moveToNewLocation(newFile, size);
 
             if (expectedOutput == expectedOutputType.NO_OPERATION_PERFORMED) {

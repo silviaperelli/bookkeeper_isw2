@@ -2,14 +2,11 @@ package org.apache.bookkeeper.bookie;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import org.apache.bookkeeper.bookie.storage.ldb.WriteCache;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.MockedStatic;
 
 import java.lang.reflect.Field;
 import java.util.stream.Stream;
@@ -70,7 +67,6 @@ public class WriteCacheTest {
         public int getSize() { return size; }
     }
 
-    // Metodo che fornisce i dati per il test parametrico
     private static Stream<Arguments> data() {
         return Stream.of(
                 // Casi che devono lanciare un'eccezione durante la costruzione
