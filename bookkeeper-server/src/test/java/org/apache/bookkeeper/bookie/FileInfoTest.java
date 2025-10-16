@@ -150,7 +150,7 @@ public class FileInfoTest {
 
     @ParameterizedTest
     @MethodSource("data")
-    public void moveToNewLocationBoundaryTest(File newFile, long size, expectedOutputType expectedOutput, Class<? extends Throwable> expectedException) throws IOException {
+    public void testMoveToNewLocation(File newFile, long size, expectedOutputType expectedOutput, Class<? extends Throwable> expectedException) throws IOException {
         // Gestione dei casi di fallimento
         if (expectedException != null) {
             assertThrows(expectedException, () -> fileInfo.moveToNewLocation(newFile, size));
@@ -219,7 +219,7 @@ public class FileInfoTest {
 
     // Test aggiuntivi dopo PIT
     @Test
-    public void testRlocFileAlreadyExists() throws IOException {
+    public void testExistentRloc() throws IOException {
         // Uccide la mutazione che nega la condizione `if (!rlocFile.exists())`
         // Crea manualmente il file .rloc per simulare uno stato pre-esistente
         File rlocFile = new File(newLocationFile.getParentFile(), newLocationFile.getName() + IndexPersistenceMgr.RLOC);
@@ -229,7 +229,7 @@ public class FileInfoTest {
     }
 
     @Test
-    public void testMoveToNonExistentDirectory() throws IOException {
+    public void testNonExistentDirectory() throws IOException {
         // Uccide la mutazione che rimuove la chiamata a `checkParents`
         // Tenta di spostare il file in una sottodirectory che non esiste
         File nonExistentDir = new File(USER_DIR, TEST_RESOURCES_DIR + "subdir/");
@@ -245,7 +245,7 @@ public class FileInfoTest {
     }
 
     @Test
-    public void testForceAndCloseAreCalled() throws Exception {
+    public void testForceClose() throws Exception {
         // Uccide le mutazioni che rimuovono le chiamate a `.force()` e `.close()`
         // Prepara un mock per il canale originale per simulare una copia riuscita
         FileChannel mockOriginalFc = Mockito.mock(FileChannel.class);

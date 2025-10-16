@@ -91,7 +91,7 @@ public class WriteCachePutTest {
         }
     }
 
-    private static Stream<Arguments> providePutArguments() {
+    private static Stream<Arguments> data() {
         return Stream.of(
                 Arguments.of(IdType.NEGATIVE.getId(), IdType.POSITIVE.getId(), EntryType.VALID_SMALL.getInstance(), false, IllegalArgumentException.class),
                 Arguments.of(IdType.POSITIVE.getId(), IdType.NEGATIVE.getId(), EntryType.VALID_SMALL.getInstance(), false, IllegalArgumentException.class),
@@ -104,7 +104,7 @@ public class WriteCachePutTest {
     }
 
     @ParameterizedTest
-    @MethodSource("providePutArguments")
+    @MethodSource("data")
     void testPut(long ledgerId, long entryId, ByteBuf entry, boolean expectedResult, Class<? extends Throwable> expectedException) {
         // Gestione dei casi di fallimento
         if (expectedException != null) {
@@ -136,7 +136,7 @@ public class WriteCachePutTest {
 
     // Test aggiuntivi dopo Jacoco
     @Test
-    void testPutTriggersContinueAcrossSegmentBoundary() {
+    void testSegmentBoundary() {
         // La dimensione della prima entry, allineata a 64 byte, non rimepie completamente il primo segmento
         int firstEntrySize = 400;
         ByteBuf firstEntry = Unpooled.buffer(firstEntrySize).writerIndex(firstEntrySize);
@@ -158,7 +158,7 @@ public class WriteCachePutTest {
     }
 
     @Test
-    void testPutWithOutOfOrderEntries() {
+    void testOutOfOrderEntries() {
         ByteBuf lastEntry = null;
         ByteBuf entry5Retrieved = null;
         ByteBuf entry3Retrieved = null;
@@ -190,7 +190,7 @@ public class WriteCachePutTest {
 
     // Test aggiuntivi dopo PIT
     @Test
-    void testPutFillsCacheExactlyToKillBoundaryMutant() {
+    void testFillsCache() {
 
         // Riempie quasi completamente, lasciando uno spazio libero noto
         int entrySize = 64;
@@ -213,7 +213,7 @@ public class WriteCachePutTest {
     }
 
     @Test
-    void testPutWhenEntryFitsSegmentExactly() {
+    void testEntryFitsExactly() {
         // Riempie quasi completamente il primo segmento, lasciando uno spazio libero noto
         int firstEntrySize = 448; // Rimangono 512 - 448 = 64 byte.
         ByteBuf firstEntry = Unpooled.buffer(firstEntrySize).writerIndex(firstEntrySize);
