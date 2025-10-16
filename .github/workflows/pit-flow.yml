@@ -1,9 +1,3 @@
-# GitHub Actions workflow for Mutation Testing Analysis.
-#
-# This workflow triggers on push/pull_request and can also be run manually.
-# It activates the 'pitest' Maven profile to generate a mutation testing report,
-# and uploads the resulting HTML report as a build artifact.
-
 name: PIT Mutation Testing Report
 
 on:

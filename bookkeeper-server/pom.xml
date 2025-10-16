@@ -381,16 +381,13 @@
       <id>jacoco</id>
       <build>
         <plugins>
-          <!-- Esegue i test con l'agente JaCoCo -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
-              <!-- Sovrascrive la argLine con quella di JaCoCo -->
               <argLine>@{argLine}</argLine>
             </configuration>
           </plugin>
-          <!-- Prepara l'agente e genera il report -->
           <plugin>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>

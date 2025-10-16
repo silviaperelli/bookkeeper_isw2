@@ -1,18 +1,12 @@
-# Nome del workflow, sarà visibile nella scheda "Actions" di GitHub.
 name: JaCoCo Code Coverage
 
 on:
-  # Eseguilo quando fai un push sul tuo branch di lavoro.
-  # MODIFICA 'master' con il nome del tuo branch!
   push:
     branches: [ "master" ]
 
-  # Eseguilo anche per le pull request verso il branch principale.
   pull_request:
     branches: [ "master"]
 
-  # Aggiungo questo: ti permette di avviare il workflow manualmente
-  # dalla UI di GitHub, utilissimo per i test!
   workflow_dispatch:
 
 jobs:
@@ -27,22 +21,16 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          # CORREZIONE 1: Usiamo JDK 17, non 8, come richiesto dal progetto e dal tuo ambiente.
           java-version: '17'
           distribution: 'temurin'
-          # CORREZIONE 2: Caching semplificato e raccomandato.
           cache: maven
 
       - name: Build with JaCoCo and Generate Report
-        # CORREZIONE 3: Questo è il comando completo che abbiamo scoperto essere necessario.
-        # Esegue il build, esclude i moduli problematici, e attiva il profilo JaCoCo.
         run: mvn clean verify -P jacoco
 
       - name: Upload JaCoCo Code Coverage Report
         uses: actions/upload-artifact@v4
         with:
-          # CORREZIONE 4: Nome più descrittivo per l'artefatto.
           name: jacoco-report
-          # Il percorso del report generato da JaCoCo è corretto.
           path: bookkeeper-server/target/site/jacoco/
           if-no-files-found: error
