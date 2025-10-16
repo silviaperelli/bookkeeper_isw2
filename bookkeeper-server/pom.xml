@@ -456,6 +456,7 @@
                 <param>org.apache.bookkeeper.bookie.WriteCacheTest</param>
                 <param>org.apache.bookkeeper.bookie.WriteCachePutTest</param>
                 <param>org.apache.bookkeeper.bookie.WriteCacheGetTest</param>
+                <param>org.apache.bookkeeper.bookie.LLMWriteCacheTest</param>
               </targetTests>
               <outputFormats>
                 <outputFormat>XML</outputFormat>
