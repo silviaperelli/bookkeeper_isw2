@@ -187,4 +187,45 @@ public class WriteCachePutTest {
             if (entry3Retrieved != null) entry3Retrieved.release();
         }
     }
+
+    // Test aggiuntivi dopo PIT
+    @Test
+    void testPutFillsCacheExactlyToKillBoundaryMutant() {
+
+        // Riempie quasi completamente, lasciando uno spazio libero noto
+        int entrySize = 64;
+        int entriesToFill = 15; // 15 * 64 = 960 bytes
+
+        for (int i = 0; i < entriesToFill; i++) {
+            ByteBuf entry = Unpooled.buffer(entrySize).writerIndex(entrySize);
+            assertTrue(writeCache.put(1L, i, entry), "Inserimento di riempimento #" + i + " doveva riuscire.");
+        }
+
+        // Crea l'entry finale di 64 byte.
+        ByteBuf finalEntry = Unpooled.buffer(entrySize).writerIndex(entrySize);
+
+        // Asserzione per uccidere il mutante `(960 + 64) >= 1024`
+        assertTrue(writeCache.put(2L, 0L, finalEntry), "L'inserimento che riempie esattamente la cache doveva avere successo.");
+
+        // Verifica finale che la cache sia piena
+        ByteBuf overflowEntry = Unpooled.buffer(1).writerIndex(1);
+        assertFalse(writeCache.put(3L, 0L, overflowEntry), "L'inserimento oltre la capacità doveva fallire.");
+    }
+
+    @Test
+    void testPutWhenEntryFitsSegmentExactly() {
+        // Riempie quasi completamente il primo segmento, lasciando uno spazio libero noto
+        int firstEntrySize = 448; // Rimangono 512 - 448 = 64 byte.
+        ByteBuf firstEntry = Unpooled.buffer(firstEntrySize).writerIndex(firstEntrySize);
+        assertTrue(writeCache.put(1L, 1L, firstEntry));
+
+        // Crea la seconda entry di 64 byte.
+        int secondEntrySize = 64;
+        ByteBuf secondEntry = Unpooled.buffer(secondEntrySize).writerIndex(secondEntrySize);
+
+        // L'inserimento deve riuscire correttamente.
+        assertTrue(writeCache.put(2L, 1L, secondEntry), "L'inserimento che riempie esattamente il segmento doveva avere successo.");
+        assertNotNull(writeCache.get(2L, 1L), "La seconda entry dovrebbe essere recuperabile.");
+        assertEquals(2, writeCache.count());
+    }
 }
