@@ -106,6 +106,10 @@ public class WriteCacheTest {
                 assertTrue(writeCache.isEmpty(), "La cache dovrebbe essere vuota all'inizio");
 
                 // Test aggiuntivi dopo PIT
+
+                int expectedSegmentsCount = 1 + (int) (maxCacheSize / maxSegmentSize);
+                assertEquals(expectedSegmentsCount, getPrivateField(writeCache, "segmentsCount"), "Il numero di segmenti calcolato non è corretto");
+
                 // Controlla che i calcoli per maschera, bit e dimensione dell'ultimo segmento siano corretti
                 long expectedMask = maxSegmentSize - 1;
                 assertEquals(expectedMask, getPrivateField(writeCache, "segmentOffsetMask"), "Fallita la verifica di segmentOffsetMask");
