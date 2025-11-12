@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import org.apache.bookkeeper.bookie.storage.ldb.WriteCache;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -142,4 +143,19 @@ public class WriteCacheTest {
         }
     }
 
+    @Test
+    void testCheckArguments() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            new WriteCache(UnpooledByteBufAllocator.DEFAULT, 1024, 0);
+        });
+
+        String exceptionMessage = exception.getMessage();
+        String specificMessage = "Max segment size needs to be in form of 2^n";
+
+        // Verifichiamo che il messaggio sia nullo o non contenga la stringa specifica
+        if (exceptionMessage != null) {
+            assertFalse(exceptionMessage.contains(specificMessage),
+                    "L'eccezione non dovrebbe provenire dal controllo 'power of two'");
+        }
+    }
 }
